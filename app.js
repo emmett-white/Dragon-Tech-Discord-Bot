@@ -1,75 +1,104 @@
-'use strict';
+/*=========================================================
 
-require('dotenv').config()
+					  Dragon-Tech-Bot
+					  	Discord Bot
 
+					 Author: Emmett
+					 Date: 29th April
+				    Copyright (C) 2020
+
+=========================================================*/
+
+'use strict'
+
+// require('dotenv').config()
+
+const fs =							require('fs')
 const guild = 						require('guild')
 const { Client, MessageEmbed } = 	require('discord.js')
 
 const client = new Client()
 
-const TOKEN = process.env.TOKEN
+// const TOKEN = process.env.TOKEN
+
+const config = require('./config.json')
+const UpdateConfig = require('./updatecfg.json')
+const Update = 0
 
 client.on('ready', () => {
 	console.info(`Logged in as ${client.user.tag}!`)
 })
 
+const cmd = require('./commands.js')
 client.on('message', async msg => {
-	if (msg.content === '$callbot') {
-		msg.channel.send(
-			'**Beep boop...**\n\Hello, I`m here, how can I help you?\n\For help type $help.'
-		)
+	const args = msg.content.slice(config.prefix.length).trim().split(/ +/g);
+  	const command = args.shift().toLowerCase();
 
-		msg.react('✋') // ✋ = :raised_hand:
-	}
 
-	else if (msg.content === '$help') {
+	function EmbedMessage(title, color, desc) {
 		const embed = new MessageEmbed()
 
-		.setTitle('Dragon-Tech Support')
-		.setColor(0xd4c222)
-		.setDescription('**Commands**:\n- $help\n- $votekick\n- $staff\n- $ping\n- $avatar');
+		.setTitle(title)
+		.setColor(color)
+		.setDescription(desc)
 
-	    msg.channel.send(embed);
+		msg.channel.send(embed)
 	}
 
-  	else if (msg.content === '$votekick') {
-  		if (msg.mentions.users.size) {
-    		const taggedUser = msg.mentions.users.first()
+	cmd.cmdsFunction(msg)
 
-    		msg.channel.send(`Vote kick for: ${taggedUser.username}`)
-  		} else msg.reply('Please tag a valid user!')
+	// Embed messages
+	if (msg.content === '$help') {
+		EmbedMessage(
+			'Dragon-Tech Support',
+			0xd4c222,
+			'**Commands**:\n- $help\n- $votekick\n- $staff\n- $ping\n- $avatar\n- $update'
+		)
 	}
 
-	else if (msg.content === '$staff') {
-		let
-			// Role ID's
-			techSupport = "696089336978079805",
-			moderator = "696089600560726137",
-			hacker = "696088492601507912",
-			webDev = "704404302244085851",
-			admin = "696083121107632148",
-			owner = "696083537698226186",
-
-			// Members with that roles
-			membersWithTechSupp = msg.guild.roles.cache.get(techSupport).members,
-			membersWithMod = msg.guild.roles.cache.get(moderator).members,
-			membersWithHacker = msg.guild.roles.cache.get(hacker).members,
-			membersWithWebDev = msg.guild.roles.cache.get(webDev).members,
-			membersWithAdmin = msg.guild.roles.cache.get(admin).members,
-			membersWithOwner = msg.guild.roles.cache.get(owner).members
-
-		msg.channel.send(`** STAFF TEAM INFORMATION **\n\nOwners: ${membersWithOwner.size} members with that role.\nAdministrators: ${membersWithAdmin.size} members with that role.\nModerators: ${membersWithMod.size} members with that role.\nTech Supports: ${membersWithTechSupp.size} members with that role.\nWeb Developers: ${membersWithWebDev.size} members with that role.\nHackers: ${membersWithHacker.size} members with that role.`)
+	else if (msg.content === '$update') {
+	    EmbedMessage(
+			'Dragon-Tech Update',
+			0xd4c222,
+			`**Update**:\n- ${Update == 0 ? UpdateConfig.noupdate : UpdateConfig.update}`
+		)
 	}
 
-	// Check ping
-	else if (msg.content === '$ping') {
-		msg.channel.send("Your ping is `"
-			+ `${(Date.now() - msg.createdTimestamp)}` + " ms`")
+	else if (msg.content === '$rules') {
+		EmbedMessage(
+			'Dragon-Tech Rules',
+			0xd4c222,
+			'** RULES **\n- Zabranjeno je bilo kakvo vredjanje clanova.\n- Zabranjeno je psovanje, spam...\n- Zabranjeno je reklamiranje.\n- Zabranjeno je slanje eksplicitnih poruka, slika (nsfw)...\n- Pisati iskljucivo srpsko-hrvatskim pismom (latinicom).\n\nNe trazite role za administratora, moderatora itd, dobija se po zasluzi.'
+		)
 	}
 
-	else if (msg.content === '$avatar') {
-		msg.reply(msg.author.displayAvatarURL());
+	else if (msg.content === '$deletemsg') {
+		msg.delete({ timeout: 500 })
+		msg.channel.send('Deleted msg.')
+	}
+
+	else if (command === 'idea') {
+		const text = args.join(" ")
+
+		fs.appendFile('ideas.txt', `\n${text}`, function (err) {
+			if (err)
+				throw err
+
+			console.log('Saved.')
+
+			msg.reply(`Predlozili ste ideju: ${text}.`)
+		})
+	}
+
+	else if (command === 'botmsg') {
+		if (msg.member.roles.cache.has('705425320265908225') ||
+			msg.member.roles.cache.has('705466773046296656')) {
+			const message = args.join(" ")
+
+			msg.delete({ timeout: 500 })
+			msg.channel.send(message)
+		}
 	}
 })
 
-client.login(TOKEN)
+client.login(config.token)
